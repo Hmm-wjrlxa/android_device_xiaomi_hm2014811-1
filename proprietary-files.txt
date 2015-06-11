@@ -2,12 +2,14 @@
 bin/adsprpcd
 vendor/lib/libadsprpc.so
 vendor/lib/libfastcvopt.so
+vendor/lib/libscve.so
 
 # Audio
 vendor/lib/libacdbloader.so
 vendor/lib/libacdbrtac.so
 vendor/lib/libadiertac.so
 vendor/lib/libaudcal.so
+vendor/lib/libaudioalsa.so
 vendor/lib/libFlacSwDec.so
 -vendor/lib/libqct_resampler.so
 vendor/lib/soundfx/libqcbassboost.so
@@ -93,6 +95,10 @@ vendor/lib/libmmipl.so
 vendor/lib/libmmjpeg.so
 vendor/lib/libmmqjpeg_codec.so
 vendor/lib/liboemcamera.so
+vendor/lib/libomx_amrdec_sharedlibrary.so
+vendor/lib/libomx_amrenc_sharedlibrary.so
+vendor/lib/libomx_sharedlibrary.so
+vendor/lib/libqomx_jpegdec.so
 vendor/lib/libqomx_jpegenc.so
 
 # Camera firmware
@@ -103,9 +109,10 @@ etc/firmware/cpp_firmware_v1_4_0.fw
 
 # DRM
 bin/qseecomd
-vendor/lib/libdrmdecrypt.so:lib/libdrmdecrypt.so
+lib/libWVphoneAPI.so
 vendor/lib/drm/libdrmprplugin.so
 vendor/lib/drm/libdrmwvmplugin.so
+vendor/lib/libdrmdecrypt.so
 vendor/lib/libdrmfs.so
 vendor/lib/libdrmtime.so
 vendor/lib/libprdrmdecrypt.so
@@ -124,7 +131,7 @@ bin/xtwifi-inet-agent
 etc/lowi.conf
 etc/permissions/com.qualcomm.location.xml
 etc/xtwifi.conf
--lib/hw/gps.default.so:lib/hw/gps.msm8916.so
+-lib/hw/gps.default.so
 -lib/libgps.utils.so
 -lib/libloc_api_v02.so
 -lib/libloc_core.so
@@ -161,7 +168,6 @@ vendor/lib/libOpenCL.so
 vendor/lib/libRSDriver_adreno.so
 vendor/lib/librs_adreno.so
 vendor/lib/librs_adreno_sha1.so
-vendor/lib/libsc-a2xx.so
 vendor/lib/libsc-a3xx.so
 vendor/lib/libscale.so
 
@@ -170,6 +176,7 @@ etc/firmware/a300_pfp.fw
 etc/firmware/a300_pm4.fw
 
 # Media
+lib/libOmxVdecHevc.so
 vendor/lib/libDivxDrm.so
 vendor/lib/libExtendedExtractor.so
 -vendor/lib/libHevcSwDecoder.so
@@ -179,6 +186,7 @@ vendor/lib/libmmparser.so
 vendor/lib/libmm-color-convertor.so
 vendor/lib/libOmxAacDec.so
 vendor/lib/libOmxEvrcDec.so
+vendor/lib/libOmxMux.so
 vendor/lib/libOmxQcelp13Dec.so
 vendor/lib/libSHIMDivxDrm.so
 
@@ -231,6 +239,10 @@ vendor/lib/libril-qc-qmi-1.so
 vendor/lib/libril-qcril-hook-oem.so
 vendor/lib/libxml.so
 
+# FM
+bin/fmconfig
+bin/fm_qsoc_patches
+
 # Sensors
 lib/hw/sensors.qcom.so:lib/hw/sensors.msm8916.so
 vendor/lib/libcalmodule_akm.so
@@ -265,7 +277,6 @@ lib/modules/gpio_event.ko
 lib/modules/gpio_input.ko
 lib/modules/gpio_matrix.ko
 lib/modules/gpio_output.ko
-lib/modules/ice40-hcd.ko
 lib/modules/mcDrvModule.ko
 lib/modules/mcKernelApi.ko
 lib/modules/mmc_block_test.ko
@@ -276,3 +287,38 @@ lib/modules/qcrypto.ko
 lib/modules/radio-iris-transport.ko
 lib/modules/spidev.ko
 lib/modules/test-iosched.ko
+
+# ICE40
+etc/firmware/ice40.bin
+lib/modules/ice40-hcd.ko
+
+# MMI
+vendor/lib/mmi_audio.so
+vendor/lib/mmi_battery.so
+vendor/lib/mmi_bt.so
+vendor/lib/mmi_camera.so
+vendor/lib/mmi_flashlight.so
+vendor/lib/mmi_fm.so
+vendor/lib/mmi_gps_garden.so
+vendor/lib/mmi_gsensor.so
+vendor/lib/mmi_gyroscope.so
+vendor/lib/mmi_headset.so
+vendor/lib/mmi_key.so
+vendor/lib/mmi_keypadbacklight.so
+vendor/lib/mmi_lcd.so
+vendor/lib/mmi_led.so
+vendor/lib/mmi_loopback.so
+vendor/lib/mmi_lsensor.so
+vendor/lib/mmi_msensor.so
+vendor/lib/mmi_psensor.so
+vendor/lib/mmi_sdcard.so
+vendor/lib/mmi_sim.so
+vendor/lib/mmi_sysinfo.so
+vendor/lib/mmi_torch.so
+vendor/lib/mmi_touch.so
+vendor/lib/mmi_touchext.so
+vendor/lib/mmi_touchpanel.so
+vendor/lib/mmi_usb_otg.so
+vendor/lib/mmi_vibrator.so
+vendor/lib/mmi_volume.so
+vendor/lib/mmi_wifi.so
