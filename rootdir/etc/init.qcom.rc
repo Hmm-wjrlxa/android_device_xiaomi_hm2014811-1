@@ -252,6 +252,7 @@ on fs
     #write /sys/kernel/boot_adsp/boot 1
 
 on post-fs
+    export_rc /system/etc/init.cne.rc
     export LD_PRELOAD /vendor/lib/libNimsWrap.so
 
 # msm specific files that need to be created on /data
