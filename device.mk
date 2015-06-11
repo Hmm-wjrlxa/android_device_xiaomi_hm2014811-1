@@ -213,7 +213,6 @@ PRODUCT_PACKAGES += \
     init.qcom.audio.sh \
     init.qcom.efs.sync.sh \
     init.qcom.modem_links.sh \
-    init.qcom.post_boot.sh \
     init.qcom.rootagent.sh \
     init.qcom.sdio.sh \
     init.qcom.uicc.sh \

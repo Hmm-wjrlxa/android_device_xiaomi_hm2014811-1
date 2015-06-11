@@ -30,6 +30,8 @@ import init.target.rc
 
 on early-init
     mount debugfs debugfs /sys/kernel/debug
+    write /sys/block/mmcblk0/queue/scheduler noop
+    write /sys/block/mmcblk0/bdi/read_ahead_kb 512
 
 on init
     # Set permissions for persist partition
@@ -185,6 +187,46 @@ on boot
     chown system system /sys/class/sensors/yas537-mag/yas_self_test
     chown 0774 /sys/class/sensors/yas537-mag/yas_self_test
 
+on property:service.bootanim.exit=1
+    write /sys/module/lpm_levels/enable_low_power/l2 4
+    write /sys/module/msm_pm/modes/cpu0/power_collapse/suspend_enabled 1
+    write /sys/module/msm_pm/modes/cpu1/power_collapse/suspend_enabled 1
+    write /sys/module/msm_pm/modes/cpu2/power_collapse/suspend_enabled 1
+    write /sys/module/msm_pm/modes/cpu3/power_collapse/suspend_enabled 1
+    write /sys/module/msm_pm/modes/cpu0/standalone_power_collapse/suspend_enabled 1
+    write /sys/module/msm_pm/modes/cpu1/standalone_power_collapse/suspend_enabled 1
+    write /sys/module/msm_pm/modes/cpu2/standalone_power_collapse/suspend_enabled 1
+    write /sys/module/msm_pm/modes/cpu3/standalone_power_collapse/suspend_enabled 1
+    write /sys/module/msm_pm/modes/cpu0/standalone_power_collapse/idle_enabled 1
+    write /sys/module/msm_pm/modes/cpu1/standalone_power_collapse/idle_enabled 1
+    write /sys/module/msm_pm/modes/cpu2/standalone_power_collapse/idle_enabled 1
+    write /sys/module/msm_pm/modes/cpu3/standalone_power_collapse/idle_enabled 1
+    write /sys/module/msm_pm/modes/cpu0/power_collapse/idle_enabled 1
+    write /sys/module/msm_pm/modes/cpu1/power_collapse/idle_enabled 1
+    write /sys/module/msm_pm/modes/cpu2/power_collapse/idle_enabled 1
+    write /sys/module/msm_pm/modes/cpu3/power_collapse/idle_enabled 1
+
+on property:init.svc.bootanim=stopped
+    # enable governor
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor "interactive"
+    write /sys/devices/system/cpu/cpufreq/interactive/above_hispeed_delay "25000 1094400:50000"
+    write /sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load 90
+    write /sys/devices/system/cpu/cpufreq/interactive/timer_rate 25000
+    write /sys/devices/system/cpu/cpufreq/interactive/hispeed_freq 998400
+    write /sys/devices/system/cpu/cpufreq/interactive/io_is_busy 0
+    write /sys/devices/system/cpu/cpufreq/interactive/target_loads "85 998400:90 1094400:80"
+    write /sys/devices/system/cpu/cpufreq/interactive/min_sample_time 50000
+    write /sys/devices/system/cpu/cpufreq/interactive/sampling_down_factor 50000
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 800000
+
+    # bring all CPUs online
+    write /sys/devices/system/cpu/cpu1/online 1
+    write /sys/devices/system/cpu/cpu2/online 1
+    write /sys/devices/system/cpu/cpu3/online 1
+
+    write /sys/block/mmcblk0/queue/scheduler row
+    start mpdecision
+
 # msm specific files that need to be created on /data
 on post-fs-data
     # we will remap this as /mnt/sdcard with the sdcard fuse tool
@@ -297,9 +339,6 @@ service usbhub_init /system/bin/usbhub_init
 
 service qcomsysd /system/bin/qcom-system-daemon
     class main
-
-on property:sys.boot_completed=1
-    write /dev/kmsg "Boot completed "
 
 on property:persist.radio.atfwd.start=false
     stop atfwd
@@ -678,12 +717,6 @@ service qcom-sh /system/bin/sh /init.qcom.sh
     user root
     oneshot
 
-service qcom-post-boot /system/bin/sh /system/etc/init.qcom.post_boot.sh
-    class late_start
-    user root
-    disabled
-    oneshot
-
 service wifi-sdio-on /system/bin/sh /system/etc/init.qcom.sdio.sh
     class late_start
     group wifi inet
@@ -695,10 +728,6 @@ service wifi-crda /system/bin/sh /system/etc/init.crda.sh
    user root
    disabled
    oneshot
-
-
-on property:sys.boot_completed=1
-    start qcom-post-boot
 
 service atfwd /system/bin/ATFWD-daemon
     class late_start
