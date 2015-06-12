@@ -187,6 +187,8 @@ etc/firmware/a300_pfp.fw
 etc/firmware/a300_pm4.fw
 
 # Media
+framework/qcmediaplayer.jar
+lib/libdashplayer.so
 lib/libOmxVdecHevc.so
 vendor/lib/libDivxDrm.so
 vendor/lib/libExtendedExtractor.so
