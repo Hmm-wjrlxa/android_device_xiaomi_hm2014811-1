@@ -37,6 +37,8 @@
 static pthread_once_t g_init = PTHREAD_ONCE_INIT;
 static pthread_mutex_t g_lock = PTHREAD_MUTEX_INITIALIZER;
 
+static struct light_state_t g_attention;
+static struct light_state_t g_notification;
 static struct light_state_t g_battery;
 
 const char *const BLUE_LED_FILE
@@ -59,9 +61,6 @@ const char *const RED_BLINK_FILE
 
 const char *const LCD_FILE
         = "/sys/class/leds/lcd-backlight/brightness";
-
-const char *const BUTTONS_FILE
-        = "/sys/class/leds/button-backlight/brightness";
 
 /**
  * device methods
@@ -139,13 +138,13 @@ set_speaker_light_locked(struct light_device_t *dev,
     }
 
     if (blink) {
-        write_int(BLUE_BLINK_FILE, ((state->color) & 0xff) ? 1 : 0);
-        write_int(GREEN_BLINK_FILE, ((state->color >> 8) & 0xff) ? 1 : 0);
-        write_int(RED_BLINK_FILE, ((state->color >> 16) & 0xff) ? 1 : 0);
+        write_int(BLUE_BLINK_FILE, ((state->color) & 0xff) >= 128 ? 255 : 0);
+        write_int(GREEN_BLINK_FILE, ((state->color >> 8) & 0xff) >= 128 ? 255 : 0);
+        write_int(RED_BLINK_FILE, ((state->color >> 16) & 0xff) >= 128 ? 255 : 0);
     } else {
-        write_int(BLUE_LED_FILE, ((state->color) & 0xff) ? 1 : 0);
-        write_int(GREEN_LED_FILE, ((state->color >> 8) & 0xff) ? 1 : 0);
-        write_int(RED_LED_FILE, ((state->color >> 16) & 0xff) ? 1 : 0);
+        write_int(BLUE_LED_FILE, ((state->color) & 0xff) >= 128 ? 255 : 0);
+        write_int(GREEN_LED_FILE, ((state->color >> 8) & 0xff) >= 128 ? 255 : 0);
+        write_int(RED_LED_FILE, ((state->color >> 16) & 0xff) >= 128 ? 255 : 0);
     }
 
     return 0;
@@ -155,7 +154,13 @@ static void
 handle_speaker_light_locked(struct light_device_t *dev)
 {
     set_speaker_light_locked(dev, NULL);
-    set_speaker_light_locked(dev, &g_battery);
+    if (is_lit(&g_attention)) {
+        set_speaker_light_locked(dev, &g_attention);
+    } else if (is_lit(&g_notification)) {
+        set_speaker_light_locked(dev, &g_notification);
+    } else {
+        set_speaker_light_locked(dev, &g_battery);
+    }
 }
 
 static int
@@ -175,19 +180,31 @@ set_light_backlight(struct light_device_t *dev,
 }
 
 static int
-set_light_buttons(struct light_device_t *dev,
+set_light_attention(struct light_device_t *dev,
         const struct light_state_t *state)
 {
-    int err = 0;
-    int brightness = rgb_to_brightness(state);
-
     pthread_mutex_lock(&g_lock);
 
-    err = write_int(BUTTONS_FILE, brightness);
+    g_attention = *state;
+    handle_speaker_light_locked(dev);
 
     pthread_mutex_unlock(&g_lock);
 
-    return err;
+    return 0;
+}
+
+static int
+set_light_notifications(struct light_device_t *dev,
+        const struct light_state_t *state)
+{
+    pthread_mutex_lock(&g_lock);
+
+    g_notification = *state;
+    handle_speaker_light_locked(dev);
+
+    pthread_mutex_unlock(&g_lock);
+
+    return 0;
 }
 
 static int
@@ -229,8 +246,10 @@ static int open_lights(const struct hw_module_t *module, const char *name,
 
     if (0 == strcmp(LIGHT_ID_BACKLIGHT, name))
         set_light = set_light_backlight;
-    else if (0 == strcmp(LIGHT_ID_BUTTONS, name))
-        set_light = set_light_buttons;
+    else if (0 == strcmp(LIGHT_ID_NOTIFICATIONS, name))
+        set_light = set_light_notifications;
+    else if (0 == strcmp(LIGHT_ID_ATTENTION, name))
+        set_light = set_light_attention;
     else if (0 == strcmp(LIGHT_ID_BATTERY, name))
         set_light = set_light_battery;
     else
