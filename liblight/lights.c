@@ -20,7 +20,6 @@
 
 #include <cutils/log.h>
 
-#include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
@@ -36,31 +35,30 @@
 
 static pthread_once_t g_init = PTHREAD_ONCE_INIT;
 static pthread_mutex_t g_lock = PTHREAD_MUTEX_INITIALIZER;
-
 static struct light_state_t g_attention;
 static struct light_state_t g_notification;
 static struct light_state_t g_battery;
 
-const char *const BLUE_LED_FILE
-        = "/sys/class/leds/blue/brightness";
-
-const char *const BLUE_BLINK_FILE
-        = "/sys/class/leds/blue/blink";
+const char *const RED_LED_FILE
+        = "/sys/class/leds/red/brightness";
 
 const char *const GREEN_LED_FILE
         = "/sys/class/leds/green/brightness";
 
-const char *const GREEN_BLINK_FILE
-        = "/sys/class/leds/green/blink";
+const char *const BLUE_LED_FILE
+        = "/sys/class/leds/blue/brightness";
 
-const char *const RED_LED_FILE
-        = "/sys/class/leds/red/brightness";
+const char *const LCD_FILE
+        = "/sys/class/leds/lcd-backlight/brightness";
 
 const char *const RED_BLINK_FILE
         = "/sys/class/leds/red/blink";
 
-const char *const LCD_FILE
-        = "/sys/class/leds/lcd-backlight/brightness";
+const char *const GREEN_BLINK_FILE
+        = "/sys/class/leds/green/blink";
+
+const char *const BLUE_BLINK_FILE
+        = "/sys/class/leds/blue/blink";
 
 /**
  * device methods
@@ -73,20 +71,21 @@ void init_globals(void)
 }
 
 static int
-write_string(const char *path, const char *buffer)
+write_int(char const* path, int value)
 {
     int fd;
     static int already_warned = 0;
 
     fd = open(path, O_RDWR);
     if (fd >= 0) {
-        int bytes = strlen(buffer);
-        int amt = write(fd, buffer, bytes);
+        char buffer[20];
+        int bytes = snprintf(buffer, sizeof(buffer), "%d\n", value);
+        ssize_t amt = write(fd, buffer, (size_t)bytes);
         close(fd);
         return amt == -1 ? -errno : 0;
     } else {
         if (already_warned == 0) {
-            ALOGE("write_string failed to open %s (%s)\n", path, strerror(errno));
+            ALOGE("write_int failed to open %s\n", path);
             already_warned = 1;
         }
         return -errno;
@@ -94,11 +93,9 @@ write_string(const char *path, const char *buffer)
 }
 
 static int
-write_int(const char *path, int value)
+is_lit(struct light_state_t const* state)
 {
-    char buffer[20];
-    sprintf(buffer, "%d\n", value);
-    return write_string(path, buffer);
+    return state->color & 0x00ffffff;
 }
 
 static int
@@ -111,40 +108,69 @@ rgb_to_brightness(const struct light_state_t *state)
 }
 
 static int
-is_lit(const struct light_state_t *state)
-{
-    return (state->color & 0x00ffffff);
-}
-
-static int
 set_speaker_light_locked(struct light_device_t *dev,
-        const struct light_state_t *state)
+        struct light_state_t const* state)
 {
-    int blink = 0;
+    int red, green, blue;
+    int blink;
+    int onMS, offMS;
+    unsigned int colorRGB;
+
+    if(!dev) {
+        return -1;
+    }
 
     if (state == NULL) {
-        write_int(BLUE_LED_FILE, 0);
-        write_int(BLUE_BLINK_FILE, 0);
-        write_int(GREEN_LED_FILE, 0);
-        write_int(GREEN_BLINK_FILE, 0);
         write_int(RED_LED_FILE, 0);
+        write_int(GREEN_LED_FILE, 0);
+        write_int(BLUE_LED_FILE, 0);
         write_int(RED_BLINK_FILE, 0);
+        write_int(GREEN_BLINK_FILE, 0);
+        write_int(BLUE_BLINK_FILE, 0);
         return 0;
     }
 
-    if (state->flashMode == LIGHT_FLASH_TIMED &&
-            state->flashOnMS && state->flashOffMS) {
+    switch (state->flashMode) {
+        case LIGHT_FLASH_TIMED:
+            onMS = state->flashOnMS;
+            offMS = state->flashOffMS;
+            break;
+        case LIGHT_FLASH_NONE:
+        default:
+            onMS = 0;
+            offMS = 0;
+            break;
+    }
+
+    colorRGB = state->color;
+
+    red = (colorRGB >> 16) & 0xFF;
+    green = (colorRGB >> 8) & 0xFF;
+    blue = colorRGB & 0xFF;
+
+    if (onMS > 0 && offMS > 0) {
         blink = 1;
+    } else {
+        blink = 0;
     }
 
     if (blink) {
-        write_int(BLUE_BLINK_FILE, ((state->color) & 0xff) >= 128 ? 255 : 0);
-        write_int(GREEN_BLINK_FILE, ((state->color >> 8) & 0xff) >= 128 ? 255 : 0);
-        write_int(RED_BLINK_FILE, ((state->color >> 16) & 0xff) >= 128 ? 255 : 0);
+        if (red) {
+            if (write_int(RED_BLINK_FILE, blink))
+                write_int(RED_LED_FILE, 0);
+        }
+        if (green) {
+            if (write_int(GREEN_BLINK_FILE, blink))
+                write_int(GREEN_LED_FILE, 0);
+        }
+        if (blue) {
+            if (write_int(BLUE_BLINK_FILE, blink))
+                write_int(BLUE_LED_FILE, 0);
+        }
     } else {
-        write_int(BLUE_LED_FILE, ((state->color) & 0xff) >= 128 ? 255 : 0);
-        write_int(GREEN_LED_FILE, ((state->color >> 8) & 0xff) >= 128 ? 255 : 0);
-        write_int(RED_LED_FILE, ((state->color >> 16) & 0xff) >= 128 ? 255 : 0);
+        write_int(RED_LED_FILE, red);
+        write_int(GREEN_LED_FILE, green);
+        write_int(BLUE_LED_FILE, blue);
     }
 
     return 0;
